@@ -14,6 +14,7 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "include/Sht3xTask.h"
 #include "include/TempTask.h"
@@ -82,10 +83,16 @@ extern "C" void app_main(void) {
   //     vTaskDelay(100 / portTICK_PERIOD_MS);
   // }
 
-  TempTask temp_task = TempTask();
+  constexpr size_t MAX_QUEUE_SIZE = 10;
+  static QueueHandle_t queue = xQueueCreate(MAX_QUEUE_SIZE, sizeof(ShtData));
+  if (queue == NULL) {
+    printf("Failed to create queue\n");
+    exit(1);
+  }
+  static TempTask temp_task = TempTask();
   temp_task.register_task("Test Task", 2048, tskIDLE_PRIORITY);
 
-  Sht3xTask sht_task = Sht3xTask();
+  static Sht3xTask sht_task = Sht3xTask(&queue);
   sht_task.register_task("SHT3x task", 2048, 12);
 
   // --- Temp sensor from HERE ---

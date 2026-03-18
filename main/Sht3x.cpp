@@ -1,6 +1,8 @@
 #include "driver/i2c_master.h"
 #include "driver/i2c_types.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "include/Sht3xTask.h"
 #include "soc/gpio_num.h"
@@ -57,6 +59,19 @@ extern "C" void Sht3xTask::task() {
     // printf("Raw temperature: %d, Raw humidity: %d\n", t_raw, h_raw);
     temp = -45.0f + 175.0f * t_raw / 65535.0f;
     hum = 100.0f * (h_raw / 65535.0f);
+    ShtData sht_data = {.temp = temp,
+                        .hum = hum}; // might not work -> read up on this
+
+    printf("Preparing to push to queue at %p\n.", (void *)queue);
+
+    if (this->queue == NULL) {
+      printf("Queue is NULL, cannot push temp & humidity data.\n");
+    } else {
+      if (xQueueSendToBack(*queue, &sht_data, 0) != pdPASS) {
+        printf("Failed to push temp & humidty data to queue.\n");
+      }
+    }
+
     printf("Temperature: %.2f C, Humidity: %.2f %%\n", temp, hum);
     vTaskDelay(pdMS_TO_TICKS(1000 * 1));
   };
