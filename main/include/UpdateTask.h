@@ -3,6 +3,8 @@
 #include "portmacro.h"
 #include <clocale>
 
+#include "esp_http_client.h"
+
 class UpdateTask {
 private:
   TaskHandle_t task_handle;
