@@ -8,4 +8,5 @@ idf_build_set_property(MINIMAL_BUILD ON)
 project(hello_world)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-error" APPEND)
 # idf_build_set_property(COMPILE_OPTIONS " -Wno-missing-field-initializers" APPEND)  -> this breaks the build
-
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)

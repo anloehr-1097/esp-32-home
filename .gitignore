@@ -1,3 +1,5 @@
 build
+build.clang
 .cache
+*.old
 managed_components

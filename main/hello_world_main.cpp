@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 // #include "freertos/projdefs.h"
+#include "UpdateTask.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_system.h"
@@ -89,11 +90,14 @@ extern "C" void app_main(void) {
     printf("Failed to create queue\n");
     exit(1);
   }
-  static TempTask temp_task = TempTask();
-  temp_task.register_task("Test Task", 2048, tskIDLE_PRIORITY);
-
+  // static TempTask temp_task = TempTask();
+  // temp_task.register_task("Test Task", 2048, tskIDLE_PRIORITY);
+  //
   static Sht3xTask sht_task = Sht3xTask(&queue);
   sht_task.register_task("SHT3x task", 2048, 12);
+
+  static UpdateTask update_task = UpdateTask();
+  update_task.register_task("UpdateTask", 2048, 11);
 
   // --- Temp sensor from HERE ---
   //

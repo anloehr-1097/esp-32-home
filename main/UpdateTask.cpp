@@ -15,7 +15,7 @@ SensorData::SensorData(const std::string &device_id,
     : device_id(device_id), sensor_type(sensor_type),
       sensor_value(sensor_value), unit(unit), timestamp(timestamp) {}
 
-std::string SensorData::to_string() const {
+std::string SensorData::to_string() {
   return fmt::format(
       R"({{"device_id":"{}","sensor_type":"{}","sensor_value":{},"unit":"{}","timestamp":"{}"}})",
       device_id, sensor_type, sensor_value, unit, timestamp);
@@ -27,15 +27,16 @@ void UpdateTask::task() {
    * event handler
    */
 
-  const char *url_to_push_to = "http://localhost";
+  const char *url_to_push_to = "http://192.168.178.55";
   // int port = 8080;
   // const char *host = "localhost";
-  constexpr uint MAX_HTTP_OUTPUT_BUFFER = 2000;
+  constexpr unsigned int MAX_HTTP_OUTPUT_BUFFER = 2000;
 
   // fake data
   SensorData data("device123", "temperature", 255.0, "Celsius",
                   "2024-06-27T12:00:00Z");
 
+  auto json_data = data.to_string();
   std::cout << data.to_string() << std::endl;
   // esp_http_client_config_t config = {.url = url_to_push_to, .port = port};
   // esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -75,12 +76,13 @@ void UpdateTask::task() {
   esp_http_client_handle_t client = esp_http_client_init(&config);
 
   // POST
-  const char *post_data = data.to_string().c_str();
+  // const char *post_data = data.to_string().c_str();
   esp_http_client_set_url(client, "http://localhost:8080/api/data");
   esp_err_t err;
   esp_http_client_set_method(client, HTTP_METHOD_POST);
   esp_http_client_set_header(client, "Content-Type", "application/json");
-  esp_http_client_set_post_field(client, post_data, strlen(post_data));
+  esp_http_client_set_post_field(client, data.to_string().c_str(),
+                                 data.to_string().length());
   err = esp_http_client_perform(client);
   if (err == ESP_OK) {
     ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %" PRId64,

@@ -1,0 +1,5 @@
+CompileFlags:
+  CompilationDatabase: build.clang/
+  Remove:
+    - -mlongcalls        # remove flags clangd doesn't understand
+    - -fno-tree-switch-conversion

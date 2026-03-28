@@ -20,7 +20,7 @@ public:
              double sensor_value, const std::string &unit,
              const std::string &timestamp);
 
-  std::string to_string() const;
+  std::string to_string();
 };
 
 class UpdateTask {
