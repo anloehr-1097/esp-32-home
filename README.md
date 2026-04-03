@@ -7,13 +7,23 @@ and pushed to a dashboard running in the same local network.
 
 # Next Steps
 - [] Complete the wifi config: 
-    - [] Retrieve & store credentials
-    - [] Setup event group s.t. the update task is only pushing once the wifi connection is established
-    - [] Setup Event handler to handle wifi events (e.g. disconnection, reconnection, etc.)
+    - [x] Retrieve & store credentials
+    - [x] Setup event group s.t. the update task is only pushing once the wifi connection is established
+    - [-] Setup Event handler to handle wifi events (e.g. disconnection, reconnection, etc.)
+    - [x] Debug why wifi not working - isolated task works, not in combination with the rest of the tasks. Maybe need to delay udpate task sensibly
+       -> One issue was actually weak signal strength
+
+    - [ ] Cleanup 
+
+- [ ] Test update / pushing to dashboard
+    - [x] Probably formatting not correct of test data pushed --> solved formatting / string was only temporary, went out of bounds, thus c_str as well
+    - [ ] register http event handler, see docs
 
 - [] Complete the update task:
-    - [] Push data to the dashboard using HTTP POST requests
+    - [x] Push data to the dashboard using HTTP POST requests
     - [] Retrieve the data from the queue 
 
+
+- [] Unit tests for components
 
 - [] Global Error Handling and logging

@@ -3,3 +3,4 @@ build.clang
 .cache
 *.old
 managed_components
+main/include/secrets.h

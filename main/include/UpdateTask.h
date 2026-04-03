@@ -1,4 +1,6 @@
+#include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "portmacro.h"
 #include <clocale>
@@ -26,6 +28,7 @@ public:
 class UpdateTask {
 private:
   TaskHandle_t task_handle;
+  EventGroupHandle_t &event_group;
 
   static void static_task_wrapper(void *pvParameter) {
     UpdateTask *run_task = static_cast<UpdateTask *>(pvParameter);
@@ -33,6 +36,7 @@ private:
   }
 
 public:
+  UpdateTask(EventGroupHandle_t &event_group) : event_group(event_group) {}
   void task();
   void register_task(const char *name, uint16_t stack_depth,
                      UBaseType_t priority);

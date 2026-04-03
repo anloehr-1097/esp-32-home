@@ -16,12 +16,24 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "include/Sht3xTask.h"
 #include "include/TempTask.h"
+#include "include/WifiConnectTask.h"
 #include "sdkconfig.h"
+#include <memory>
+#include <string>
+#include <string_view>
 // #include "driver/gpio.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "nvs_handle.hpp"
+#include "secrets.h"
+#include <cstdio>
 // #include "soc/gpio_num.h"
+
+EventGroupHandle_t wifi_event_group;
 
 extern "C" void app_main(void) {
 
@@ -52,6 +64,86 @@ extern "C" void app_main(void) {
 
   printf("Minimum free heap size: %" PRIu32 " bytes\n",
          esp_get_minimum_free_heap_size());
+
+  // Initialize NVS
+  esp_err_t err_ssid = nvs_flash_init();
+  if (err_ssid == ESP_ERR_NVS_NO_FREE_PAGES ||
+      err_ssid == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    // NVS partition was truncated and needs to be erased
+    // Retry nvs_flash_init
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    err_ssid = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(err_ssid);
+
+  // Open
+  printf("Opening Non-Volatile Storage (NVS) handle... ");
+  // Handle will automatically close when going out of scope or when it's reset.
+  std::unique_ptr<nvs::NVSHandle> handle =
+      nvs::open_nvs_handle("storage", NVS_READWRITE, &err_ssid);
+  if (err_ssid != ESP_OK) {
+    printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err_ssid));
+  } else {
+    printf("Done\n");
+  }
+
+  // Read
+  printf("Reading restart counter from NVS ... ");
+
+  esp_err_t err_pwd;
+  std::string ssid(WIFI_SSID);
+  std::string password(WIFI_PASSWORD);
+
+  unsigned int ssid_len = 0;
+  unsigned int pwd_len = 0;
+
+  if ((err_ssid = handle->get_item_size(nvs::ItemType::SZ, "ssid", ssid_len)) ==
+      ESP_ERR_NVS_NOT_FOUND) {
+    printf("SSID not found in NVS, using default value.\n");
+  } else if (err_ssid != ESP_OK) {
+    printf("Error (%s) getting SSID size from NVS!\n",
+           esp_err_to_name(err_ssid));
+  } else if (ssid_len > 0) {
+    ssid.resize(ssid_len);
+    err_ssid = handle->get_string("ssid", ssid.data(), ssid_len);
+    if (err_ssid != ESP_OK) {
+      printf("Error (%s) reading SSID from NVS!\n", esp_err_to_name(err_ssid));
+      ssid = WIFI_SSID; // fallback to default
+    }
+  }
+
+  // same for password
+  if ((err_pwd = handle->get_item_size(nvs::ItemType::SZ, "password",
+                                       pwd_len)) == ESP_ERR_NVS_NOT_FOUND) {
+    printf("Password not found in NVS, using default value.\n");
+  } else if (err_pwd != ESP_OK) {
+    printf("Error (%s) getting password size from NVS!\n",
+           esp_err_to_name(err_pwd));
+  } else if (pwd_len > 0) {
+    password.resize(pwd_len);
+    err_pwd = handle->get_string("password", password.data(), pwd_len);
+    if (err_pwd != ESP_OK) {
+      printf("Error (%s) reading password from NVS!\n",
+             esp_err_to_name(err_pwd));
+      password = WIFI_PASSWORD; // fallback to default
+    }
+  }
+
+  // Write
+  err_ssid = handle->set_string("ssid", WIFI_SSID.c_str());
+  printf((err_ssid != ESP_OK) ? "Failed!\n" : "Done\n");
+
+  err_pwd = handle->set_string("password", WIFI_PASSWORD.c_str());
+  printf((err_ssid != ESP_OK) ? "Failed!\n" : "Done\n");
+
+  // Commit written value.
+  // After setting any values, nvs_commit() must be called to ensure changes
+  // are written to flash storage. Implementations may write to storage at
+  // other times, but this is not guaranteed.
+  printf("Committing updates in NVS ... ");
+  err_ssid = handle->commit();
+  printf((err_ssid != ESP_OK) ? "Failed!\n" : "Done\n");
+
   //
   // for (int i = 10; i >= 0; i--) {
   //     printf("Restarting in %d seconds...\n", i);
@@ -83,21 +175,25 @@ extern "C" void app_main(void) {
   //     printf("GPIO32 state: %d\n", gpio_get_level(GPIO_NUM_32));
   //     vTaskDelay(100 / portTICK_PERIOD_MS);
   // }
+  //
+  // create the event loop
+  //
 
+  wifi_event_group = xEventGroupCreate();
   constexpr size_t MAX_QUEUE_SIZE = 10;
   static QueueHandle_t queue = xQueueCreate(MAX_QUEUE_SIZE, sizeof(ShtData));
   if (queue == NULL) {
     printf("Failed to create queue\n");
     exit(1);
   }
-  // static TempTask temp_task = TempTask();
-  // temp_task.register_task("Test Task", 2048, tskIDLE_PRIORITY);
-  //
-  static Sht3xTask sht_task = Sht3xTask(&queue);
-  sht_task.register_task("SHT3x task", 2048, 12);
+  WifiConnectTask wifi_task = WifiConnectTask(ssid, password, wifi_event_group);
+  wifi_task.register_task("WiFi Connect Task", 4096, 2 | portPRIVILEGE_BIT);
 
-  static UpdateTask update_task = UpdateTask();
-  update_task.register_task("UpdateTask", 2048, 11);
+  Sht3xTask sht_task = Sht3xTask(&queue);
+  sht_task.register_task("SHT3x task", 2048, 8);
+
+  UpdateTask update_task = UpdateTask(wifi_event_group);
+  update_task.register_task("UpdateTask", 4096, 4);
 
   // --- Temp sensor from HERE ---
   //
@@ -153,5 +249,13 @@ extern "C" void app_main(void) {
   //
 
   // --- Temp sensor to HERE ---
+  //
+  while (1) {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
 }
 // }
+
+void initialize_nvs_flash() {
+  // Initialize NVS what is now down in app_main
+}
