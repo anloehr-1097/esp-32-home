@@ -5,7 +5,10 @@
 
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include "include/Sht3xTask.h"
 #include "include/helpers.h"
+#include <chrono>
+#include <fmt/chrono.h>
 #include <fmt/format.h>
 #include <iostream>
 #include <string>
@@ -95,6 +98,20 @@ void UpdateTask::task() {
                             pdFALSE, pdFALSE, portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
+      ShtData data_buffer;
+      xQueueReceive(*queue, &data_buffer, pdMS_TO_TICKS(1000));
+      if (data_buffer.temp == 0 && data_buffer.hum == 0) {
+        ESP_LOGW(TAG,
+                 "Received default ShtData from queue, skipping HTTP POST");
+        continue;
+      }
+      // create data from reading to pass to server
+      std::chrono::system_clock::time_point now =
+          std::chrono::system_clock::now();
+      std::string this_timestamp = fmt::format("{:%Y-%m-%dT%H:%M:%SZ}", now);
+
+      SensorData data("Sht3x - demo", "temperature", data_buffer.temp,
+                      "Celsius", this_timestamp.c_str());
 
       // POST
       // const char *post_data = data.to_string().c_str();

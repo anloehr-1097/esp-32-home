@@ -29,6 +29,7 @@ class UpdateTask {
 private:
   TaskHandle_t task_handle;
   EventGroupHandle_t &event_group;
+  QueueHandle_t *queue;
 
   static void static_task_wrapper(void *pvParameter) {
     UpdateTask *run_task = static_cast<UpdateTask *>(pvParameter);
@@ -36,7 +37,8 @@ private:
   }
 
 public:
-  UpdateTask(EventGroupHandle_t &event_group) : event_group(event_group) {}
+  UpdateTask(EventGroupHandle_t &event_group, QueueHandle_t *queue)
+      : event_group(event_group), queue(queue) {}
   void task();
   void register_task(const char *name, uint16_t stack_depth,
                      UBaseType_t priority);
