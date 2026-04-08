@@ -15,7 +15,6 @@
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_log.h"
-#include "esp_log_level.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
@@ -24,17 +23,15 @@
 #include "include/Sht3xTask.h"
 #include "include/TempTask.h"
 #include "include/WifiConnectTask.h"
-#include "sdkconfig.h"
-#include <memory>
-#include <string>
-#include <string_view>
-// #include "driver/gpio.h"
+#include "include/helpers.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "nvs_handle.hpp"
+#include "sdkconfig.h"
 #include "secrets.h"
 #include <cstdio>
-// #include "soc/gpio_num.h"
+#include <memory>
+#include <string>
 
 EventGroupHandle_t wifi_event_group;
 
@@ -141,7 +138,6 @@ std::unique_ptr<nvs::NVSHandle> initialize_nvs_flash() {
   // Open
   ESP_LOGI("NVS Setup", "Opening Non-Volatile Storage (NVS) handle... ");
   // Handle will automatically close when going out of scope or when it's reset.
-  // std::unique_ptr<nvs::NVSHandle> handle =
   std::unique_ptr<nvs::NVSHandle> handle =
       nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
   if (err != ESP_OK) {
@@ -156,13 +152,11 @@ std::unique_ptr<nvs::NVSHandle> initialize_nvs_flash() {
 
 extern "C" void app_main(void) {
   std::unique_ptr<nvs::NVSHandle> nvs_handle = initialize_nvs_flash();
-  std::string ssid(WIFI_SSID);
-  std::string password(WIFI_PASSWORD);
-  ssid = get_string_from_nvs(nvs_handle.get(), "ssid", WIFI_SSID);
-  password = get_string_from_nvs(nvs_handle.get(), "password", WIFI_PASSWORD);
+  std::string ssid = get_string_from_nvs(nvs_handle.get(), "ssid", WIFI_SSID);
+  std::string password =
+      get_string_from_nvs(nvs_handle.get(), "password", WIFI_PASSWORD);
 
   wifi_event_group = xEventGroupCreate();
-  constexpr size_t MAX_QUEUE_SIZE = 10;
   static QueueHandle_t queue = xQueueCreate(MAX_QUEUE_SIZE, sizeof(ShtData));
   if (queue == NULL) {
     ESP_LOGE("QueueCreate", "Failed to create queue\n");
@@ -177,61 +171,6 @@ extern "C" void app_main(void) {
   UpdateTask update_task = UpdateTask(wifi_event_group, &queue);
   update_task.register_task("UpdateTask", 4096, 4);
 
-  // --- Temp sensor from HERE ---
-  //
-  // i2c_port_t port = I2C_NUM_0;
-  //
-  // const i2c_master_bus_config_t config = {
-  //     .clk_source = I2C_CLK_SRC_DEFAULT,
-  //     .glitch_ignore_cnt = 7,
-  //     .sda_io_num = 21,
-  //     .scl_io_num = 22,
-  //     .i2c_port = port,
-  //     .flags.enable_internal_pullup = 1
-  // };
-  //
-  // i2c_master_bus_handle_t bus_hdl;
-  // ESP_ERROR_CHECK(i2c_new_master_bus(&config, &bus_hdl));
-  //
-  // // i2c_bus_handle_t bus_hdl = i2c_bus_create(port, &conf);
-  // if (bus_hdl == NULL) {
-  //     printf("Failed to create I2C master bus\n");
-  //     return;
-  // }
-  //
-  //
-  // // Add SHT3x device (addr 0x44 for VSS pin low)
-  // i2c_device_config_t dev_cfg = {
-  //     .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-  //     .device_address = 0x44,  // SHT3x_ADDR_PIN_SELECT_VSS
-  //     .scl_speed_hz = 100000,
-  // };
-  // i2c_master_dev_handle_t sht_dev;
-  // ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_hdl, &dev_cfg, &sht_dev));
-  //
-  //
-  // float temp, hum = 0;
-  // while (1) {
-  //     // High precision measurement: send 0x2400, wait 15ms, fetch data
-  //     uint8_t cmd[2] = {0x24, 0x00};
-  //     uint8_t data[6];
-  //
-  //     ESP_ERROR_CHECK(i2c_master_transmit(sht_dev, cmd, 2, 30));
-  //     ESP_ERROR_CHECK(i2c_master_receive(sht_dev, data, 6, 30));
-  //     // printf("data: 0x%x %02X %02X %02X %02X %02X\n",
-  //     data[0],data[1],data[2],data[3],data[4],data[5]);
-  //
-  //     uint16_t t_raw = (data[0] << 8) | data[1];
-  //     uint16_t h_raw = (data[3] << 8) | data[4];
-  //     // printf("Raw temperature: %d, Raw humidity: %d\n", t_raw, h_raw);
-  //     temp = -45.0f + 175.0f * t_raw / 65535.0f;
-  //     hum = 100.0f * (h_raw / 65535.0f);
-  //     printf("Temperature: %.2f C, Humidity: %.2f %%\n", temp, hum);
-  //     vTaskDelay(pdMS_TO_TICKS(1000 * 60 * 5 ));
-  //
-
-  // --- Temp sensor to HERE ---
-  //
   while (1) {
     vTaskDelay(pdMS_TO_TICKS(1000));
   }

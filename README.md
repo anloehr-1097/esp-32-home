@@ -21,7 +21,7 @@ and pushed to a dashboard running in the same local network.
 
 - [] Complete the update task:
     - [x] Push data to the dashboard using HTTP POST requests
-    - [] Retrieve the data from the queue 
+    - [x] Retrieve the data from the queue 
 
 
 - [] Unit tests for components
