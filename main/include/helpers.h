@@ -1,6 +1,8 @@
 #ifndef MAIN_INCLUDE_HELPERS_H_
 #define MAIN_INCLUDE_HELPERS_H_
 
+#include <string_view>
+
 #include "esp_bit_defs.h"
 
 const int WIFI_CONNECTED_BIT = BIT0;
@@ -16,5 +18,11 @@ constexpr unsigned int MAX_QUEUE_SIZE = 20;
  * before giving up and setting WIFI_FAIL_BIT in event group permanentely.
  */
 constexpr unsigned int MAX_WIFI_RETRY_NUM = 10;
+
+/*
+ * URL of server running dashboard.
+ */
+constexpr char DASHBOARD_URL[] = "http://192.168.178.55/api/data";
+// maybe its "http://192.168.178.55:8080/api/data"
 
 #endif  // MAIN_INCLUDE_HELPERS_H_

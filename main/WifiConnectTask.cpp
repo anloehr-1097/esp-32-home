@@ -14,6 +14,7 @@
 #include "freertos/event_groups.h"
 #include "freertos/idf_additions.h"
 #include "include//helpers.h"
+#include "include/TimeSyncTask.h"
 #include "include/helpers.h"
 #define TAG "wifi task"
 
@@ -25,14 +26,15 @@ void WifiConnectTask::task() {
     // default wifi stack initialization
     // TODO(al) this should be outsourced
     ESP_ERROR_CHECK(esp_netif_init());
+
+    // create default event loop
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     esp_netif_create_default_wifi_sta();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // create default event loop and register event handler for wifi and ip
-    // events
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
+    //   register event handler for wifi and ip events
     esp_event_handler_instance_t instance_any_id;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT, ESP_EVENT_ANY_ID,
@@ -85,6 +87,7 @@ void WifiConnectTask::task() {
      * can test which event actually happened. */
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "connected to ap SSID:%s", ssid.c_str());
+        init_sntp();
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s", ssid.c_str());
     } else {
