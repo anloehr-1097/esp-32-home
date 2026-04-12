@@ -9,15 +9,12 @@
 
 #include <cstdint>
 
-#include "driver/i2c_master.h"
-#include "driver/i2c_types.h"
 #include "esp_err.h"
 // #include "freertos/projdefs.h"
 #include <cstdio>
 #include <memory>
 #include <string>
 
-#include "UpdateTask.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_log.h"
@@ -27,7 +24,7 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "include/Sht3xTask.h"
-#include "include/TempTask.h"
+#include "include/UpdateTask.h"
 #include "include/WifiConnectTask.h"
 #include "include/helpers.h"
 #include "nvs.h"

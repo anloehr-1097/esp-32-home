@@ -1,7 +1,6 @@
 #include "WifiConnectTask.h"
 
 #include <algorithm>
-#include <iostream>
 
 #include "esp_err.h"
 #include "esp_event.h"
@@ -20,11 +19,11 @@
 
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD "WPA2"
 #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_BOTH
-#define EXAMPLE_H2E_IDENTIFIER "NOIDEA"
+#define EXAMPLE_H2E_IDENTIFIER "NOIDEA"  // TODO(al) figure out what this is for
 
 void WifiConnectTask::task() {
     // default wifi stack initialization
-    // TODO(al) this should be outsourced
+    // TODO(al) this should probably be outsourced
     ESP_ERROR_CHECK(esp_netif_init());
 
     // create default event loop
@@ -87,6 +86,7 @@ void WifiConnectTask::task() {
      * can test which event actually happened. */
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "connected to ap SSID:%s", ssid.c_str());
+        // time sync with ntp server after wifi connection is established
         init_sntp();
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s", ssid.c_str());

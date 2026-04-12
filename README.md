@@ -24,6 +24,10 @@ and pushed to a dashboard running in the same local network.
     - [x] Retrieve the data from the queue 
 
 
+- [] SHT3x
+    - [ ] Discard the first couple of readings
+    - [ ] Configure sensor read interval 
+
 - [] Unit tests for components
 
 - [] Global Error Handling and logging

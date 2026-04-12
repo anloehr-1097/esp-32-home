@@ -4,6 +4,12 @@
 
 #include <string>
 
+/*
+ * SensorData class implementation.
+ * This is the data structure representing a single sensor reading. After
+ * serialziation, it can be sensor_type to the front end dashboard.
+ */
+
 SensorData::SensorData(const std::string& device_id,
                        const std::string& sensor_type, double sensor_value,
                        const std::string& unit, const std::string& timestamp)
