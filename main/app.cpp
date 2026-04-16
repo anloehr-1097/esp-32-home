@@ -167,7 +167,7 @@ extern "C" void app_main(void) {
         WifiConnectTask(ssid, password, wifi_event_group);
     wifi_task.register_task("WiFi Connect Task", 4096, 2 | portPRIVILEGE_BIT);
 
-    Sht3xTask sht_task = Sht3xTask(&queue);
+    Sht3xTask sht_task = Sht3xTask(&queue, TEMP_RECORD_FREQUENCY_MS);
     sht_task.register_task("SHT3x task", 2048, 8);
 
     UpdateTask update_task = UpdateTask(wifi_event_group, queue, DASHBOARD_URL);

@@ -25,7 +25,6 @@ extern "C" void Sht3xTask::task() {
     i2c_master_bus_handle_t bus_hdl;
     ESP_ERROR_CHECK(i2c_new_master_bus(&config, &bus_hdl));
 
-    // i2c_bus_handle_t bus_hdl = i2c_bus_create(port, &conf);
     if (bus_hdl == NULL) {
         printf("Failed to create I2C master bus\n");
         return;
@@ -46,7 +45,7 @@ extern "C" void Sht3xTask::task() {
     vTaskDelay(pdMS_TO_TICKS(sensor_setup_delay_ms));
 
     while (1) {
-        // High precision measurement: send 0x2400, wait 15ms, fetch data
+        // High precision measurement: send 0x2400, wait 20 ms, fetch data
         uint8_t cmd[2] = {0x24, 0x00};
         uint8_t data[6];
 
@@ -66,8 +65,7 @@ extern "C" void Sht3xTask::task() {
             continue;
         }
 
-        ShtData sht_data = {.temp = temp,
-                            .hum = hum};  // might not work -> read up on this
+        ShtData sht_data = {.temp = temp, .hum = hum};
 
         if (this->queue == NULL) {
             printf("Queue is NULL, cannot push temp & humidity data.\n");
@@ -78,7 +76,7 @@ extern "C" void Sht3xTask::task() {
         }
 
         printf("Temperature: %.2f C, Humidity: %.2f %%\n", temp, hum);
-        vTaskDelay(pdMS_TO_TICKS(30000 * 1));
+        vTaskDelay(pdMS_TO_TICKS(this->record_frequency_ms));
     }
 }
 

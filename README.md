@@ -17,17 +17,15 @@ and pushed to a dashboard running in the same local network.
 
 - [ ] Test update / pushing to dashboard
     - [x] Probably formatting not correct of test data pushed --> solved formatting / string was only temporary, went out of bounds, thus c_str as well
-    - [ ] register http event handler, see docs
+    - [x] register http event handler, see docs
 
-- [] Complete the update task:
+- [x] Complete the update task:
     - [x] Push data to the dashboard using HTTP POST requests
     - [x] Retrieve the data from the queue 
 
 
-- [] SHT3x
-    - [ ] Discard the first couple of readings
-    - [ ] Configure sensor read interval 
+- [x] SHT3x
+    - [x] Configure sensor read interval 
 
 - [] Unit tests for components
-
 - [] Global Error Handling and logging
