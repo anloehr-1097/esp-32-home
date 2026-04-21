@@ -38,27 +38,21 @@ EventGroupHandle_t wifi_event_group;
 void set_string_in_nvs(nvs::NVSHandle* handle, const std::string& key,
                        const std::string& value) {
     // TODO(al) - when to set new values in NVS?
-    // Write strings to NVS -> handle this later
-    // err = handle->set_string("ssid", WIFI_SSID.c_str());
-    // printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
-    //
-    // err_pwd = handle->set_string("password", WIFI_PASSWORD.c_str());
-    // printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
-
-    // Commit written value.
-    // After setting any values, nvs_commit() must be called to ensure changes
-    // are written to flash storage. Implementations may write to storage at
-    // other times, but this is not guaranteed.
-    // printf("Committing updates in NVS ... ");
-    // err = handle->commit();
-    // printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
     esp_err_t err = handle->set_string(key.data(), value.c_str());
     std::string tag = "NVS " + key;
     if (err != ESP_OK) {
         ESP_LOGE(tag.data(), "Error (%s) setting %s in NVS!\n",
                  esp_err_to_name(err), key.data());
+        return;
     } else {
         ESP_LOGI(tag.data(), "Successfully set %s in NVS.\n", key.data());
+    }
+    err = handle->commit();
+    if (err != ESP_OK) {
+        ESP_LOGE(tag.data(), "Error (%s) committing %s to NVS!\n",
+                 esp_err_to_name(err), key.data());
+    } else {
+        ESP_LOGI(tag.data(), "Successfully committed %s to NVS.\n", key.data());
     }
 }
 
@@ -165,7 +159,7 @@ extern "C" void app_main(void) {
     }
     WifiConnectTask wifi_task =
         WifiConnectTask(ssid, password, wifi_event_group);
-    wifi_task.register_task("WiFi Connect Task", 4096, 2 | portPRIVILEGE_BIT);
+    wifi_task.register_task("WiFi Connect Task", 4096, 10 | portPRIVILEGE_BIT);
 
     Sht3xTask sht_task = Sht3xTask(&queue, TEMP_RECORD_FREQUENCY_MS);
     sht_task.register_task("SHT3x task", 2048, 8);
