@@ -3,7 +3,9 @@
 This repo illustrates how the ESP-IDF framework can be used to read temperature and humidity data from a SHT3x sensor
 and pushed to a dashboard running in the same local network via http over a Wifi connection.
 
-This is a hobby project, thus the code is not production ready. It is however a good starting point to iterate upon.
+It demonstrates inter-task comminication using FreeRTOS queues and task synchronization using event groups.
+Tasks are encapsulated in C++ classes that manage their own state and functionality, following a modular design pattern. 
+
 
 # Software Components
 The project is built on the **ESP-IDF** framework using **FreeRTOS** for real-time task scheduling and **Modern C++** (C++17/C++20 features) for object-oriented encapsulation and resource management.
@@ -16,9 +18,33 @@ The following hardware components are required to replicate:
 - The usual peripherals like a breadboard, jumper wires, a USB cable to flash the ESP32, etc.
 - (A dashboard to push the data to. This can be ommitted if you just want to print the readings to the serial console)
 
+![Hardware Setup](./assets/hardware.jpg)
+
 
 # Design Overview
 The design of the system is based on a modular architecture, where each component is responsible for a specific functionality (task in FreeRTOS jargon). 
+
+```mermaid
+graph TD
+    subgraph FreeRTOS Tasks
+        SensorTask[Sht3xTask<br>Producer]
+        WifiTask[WifiConnectTask<br>Network Manager]
+        UpdateTask[UpdateTask<br>Consumer]
+    end
+
+    subgraph Synchronization
+        DataQueue[[FreeRTOS Queue]]
+        EventGroup((EventGroup))
+    end
+
+    Sensor[SHT3x Sensor] -->|I2C| SensorTask
+    SensorTask -->|Push ShtData| DataQueue
+    DataQueue -->|Pop ShtData| UpdateTask
+
+    WifiTask -->|Set WIFI_CONNECTED_BIT| EventGroup
+    EventGroup -.->|Wait for connection| UpdateTask
+    UpdateTask -->|HTTP POST| Dashboard[Remote Dashboard]
+```
 
 The main tasks are:
 - Wifi Task: responsible for connecting to the wifi network and maintaining the connection
@@ -47,24 +73,7 @@ sht_task.register_task("SHT3x task", 2048, 8);
 
 ```
 
-## Wifi Task
-   * **Responsibility**: Manages the Wi-Fi station lifecycle (initialization, connection, and reconnection strategies).
-   * **State Management**: Updates the FreeRTOS `EventGroup` (`WIFI_CONNECTED_BIT` or `WIFI_FAIL_BIT`) to broadcast network state changes to other tasks asynchronously.
-   * **Credential Handling**: Wifi credential are retrieved from the Non-Volatile Storage (NVS) at startup.  If not available under the corresponding keys, the system falls back to credentials found in a `secret.h` file (which is not committed to the repository for security reasons). This allows for flexible configuration without hardcoding sensitive information in the codebase.
-
-## Sensor Task
-   * **Responsibility**: Interfaces with the SHT3x temperature and humidity sensor via the I2C bus.
-   * **Execution**: Runs periodically based on `TEMP_RECORD_FREQUENCY_MS`.
-   * **Data Handling**: Wraps the raw sensor readings into a `ShtData` struct and dispatches it to a thread-safe FreeRTOS Queue (`xQueue`).
-
-## Update Task
-   * **Responsibility**: Listens to the FreeRTOS Queue for new `ShtData` and pushes the telemetry to a remote dashboard via HTTP POST.
-   * **Synchronization**: Uses a FreeRTOS `EventGroup` to monitor the system's network state. It suspends HTTP operations and prevents queue consumption if the `WIFI_CONNECTED_BIT` is not set, preventing network timeouts from hanging the system.
-   * **Data Formatting**: Utilizes `fmt` to format UTC timestamps and constructs JSON payloads dynamically.
-
-## Auxiliary Components
-
-
+A more detailed technical documentation of the single tasks can be found in the [technical documentation](./assets/TECHNICAL_DOCS.md)
 
 # Build and Deployment
 
@@ -74,27 +83,24 @@ This project requires the ESP-IDF toolchain. Refer to the official ESP-IDF docum
 2. Build the project: `idf.py build`
 3. Flash and monitor: `idf.py flash monitor` (make sure to select correct port, usually /dev/ttyUSB0 or similar)
 
-# Next Steps
-- [] Complete the wifi config: 
-    - [x] Retrieve & store credentials
-    - [x] Setup event group s.t. the update task is only pushing once the wifi connection is established
-    - [-] Setup Event handler to handle wifi events (e.g. disconnection, reconnection, etc.)
-    - [x] Debug why wifi not working - isolated task works, not in combination with the rest of the tasks. Maybe need to delay udpate task sensibly
-       -> One issue was actually weak signal strength
+# Prerequisites
+The secrets.h file in the include directory has the following form. This is required, if the Wifi SSID & password is not available in the NVS.
 
-    - [ ] Cleanup 
+```C++
+#ifndef SECRETS_H
+#define SECRETS_H
 
-- [ ] Test update / pushing to dashboard
-    - [x] Probably formatting not correct of test data pushed --> solved formatting / string was only temporary, went out of bounds, thus c_str as well
-    - [x] register http event handler, see docs
+#include <string>
+constexpr std::string WIFI_SSID = "YourSSID";
+constexpr std::string WIFI_PASSWORD = "YourPassword";
 
-- [x] Complete the update task:
-    - [x] Push data to the dashboard using HTTP POST requests
-    - [x] Retrieve the data from the queue 
+#endif // SECRETS_H
+```
 
 
-- [x] SHT3x
-    - [x] Configure sensor read interval 
-
-- [] Unit tests for components
-- [] Global Error Handling and logging
+# Roadmap
+- [ ] Wifi Configuration
+  - [ ] Setup Event handler to handle case where after x retries, still not connection established.
+- [ ] Unit tests for components
+- [ ] Global Error Handling and logging
+- [ ] Take energy consumption into account

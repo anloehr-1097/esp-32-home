@@ -4,3 +4,7 @@ build.clang
 *.old
 managed_components
 main/include/secrets.h
+Worklog*
+*.~undo-tree~
+tags
+compile_commands.json
