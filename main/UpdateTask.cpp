@@ -52,7 +52,7 @@ void UpdateTask::push_data_to_server(const ShtData& data) {
     }
 
     // push data to server
-    SensorData sensor_data("Sht3-office", "temperature", data.temp, "Celsius",
+    SensorData sensor_data("Sht3-Buero", "temperature", data.temp, "Celsius",
                            this_timestamp.c_str());
     std::string payload = sensor_data.to_string();
     if (client->set_post_field(payload.c_str(), payload.length()) != ESP_OK) {
@@ -63,7 +63,7 @@ void UpdateTask::push_data_to_server(const ShtData& data) {
         return;
     }
 
-    sensor_data = {"Sht3-office", "humidity", data.hum, "%",
+    sensor_data = {"Sht3-Buero", "humidity", data.hum, "%",
                    this_timestamp.c_str()};
 
     payload = sensor_data.to_string();

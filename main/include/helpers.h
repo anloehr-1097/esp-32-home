@@ -22,7 +22,7 @@ constexpr unsigned int MAX_WIFI_RETRY_NUM = 10;
 /*
  * URL of server running dashboard.
  */
-constexpr char DASHBOARD_URL[] = "http://192.168.178.55/api/data";
+constexpr char DASHBOARD_URL[] = "http://192.168.178.44/api/data";
 // maybe its "http://192.168.178.55:8080/api/data"
 
 constexpr unsigned int TEMP_RECORD_FREQUENCY_MS = 30000;

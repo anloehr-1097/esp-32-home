@@ -147,6 +147,15 @@ std::unique_ptr<nvs::NVSHandle> initialize_nvs_flash() {
 
 extern "C" void app_main(void) {
     std::unique_ptr<nvs::NVSHandle> nvs_handle = initialize_nvs_flash();
+    auto wifi_credentials_set =
+        get_string_from_nvs(nvs_handle.get(), "setnvs", "no");
+    if (wifi_credentials_set.compare("no") == 0) {
+        set_string_in_nvs(nvs_handle.get(), "password", WIFI_PASSWORD);
+        set_string_in_nvs(nvs_handle.get(), "ssid", WIFI_SSID);
+        set_string_in_nvs(nvs_handle.get(), "setnvs", "yes");
+        ESP_LOGI("NVS setup", "NVS vars set");
+    }
+
     std::string ssid = get_string_from_nvs(nvs_handle.get(), "ssid", WIFI_SSID);
     std::string password =
         get_string_from_nvs(nvs_handle.get(), "password", WIFI_PASSWORD);
@@ -162,7 +171,7 @@ extern "C" void app_main(void) {
     wifi_task.register_task("WiFi Connect Task", 4096, 10 | portPRIVILEGE_BIT);
 
     Sht3xTask sht_task = Sht3xTask(&queue, TEMP_RECORD_FREQUENCY_MS);
-    sht_task.register_task("SHT3x task", 2048, 8);
+    sht_task.register_task("SHT3x task", 4096, 8);
 
     UpdateTask update_task = UpdateTask(wifi_event_group, queue, DASHBOARD_URL);
     update_task.register_task("UpdateTask", 4096, 4);

@@ -22,7 +22,7 @@ class Sht3xTask {
    public:
     Sht3xTask(QueueHandle_t* queue, unsigned int record_frequency_ms)
         : record_frequency_ms(record_frequency_ms) {
-        if (queue == NULL) {
+        if (queue == nullptr) {
             printf("Queue pointer on init is null\n");
             exit(1);
         }

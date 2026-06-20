@@ -116,10 +116,10 @@ void WifiConnectTask::event_handler(void* arg, esp_event_base_t event_base,
                event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG,
                  "Disconnecting from Wifi - STA_DISCONNECTED_EVENT received.");
-        uint8_t* reason = reinterpret_cast<uint8_t*>(event_data);
-        ESP_LOGI(TAG, "reason: %d", *reason);
+        auto* event = static_cast<wifi_event_sta_disconnected_t*>(event_data);
+        ESP_LOGI(TAG, "reason: %d", event->reason);
 
-        if (*reason == WIFI_REASON_BEACON_TIMEOUT) {
+        if (event->reason == WIFI_REASON_BEACON_TIMEOUT) {
             ESP_LOGE(TAG, "BEACON TIMEOUT while  connecting to WiFi");
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }

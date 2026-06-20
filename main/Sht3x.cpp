@@ -14,8 +14,8 @@ extern "C" void Sht3xTask::task() {
 
     const i2c_master_bus_config_t config = {
         .i2c_port = port,
-        .sda_io_num = (gpio_num_t)21,
-        .scl_io_num = (gpio_num_t)22,
+        .sda_io_num = (gpio_num_t)20,
+        .scl_io_num = (gpio_num_t)21,
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .glitch_ignore_cnt = 7,
         .intr_priority = 0,
